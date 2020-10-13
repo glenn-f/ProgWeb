@@ -1,0 +1,26 @@
+body {
+    background-image: url(roma_pantheon.jpg);
+    background-size: 82vw 100vh; 
+    background-repeat: no-repeat;
+    background-position: 9vw 0px;
+    background-color: #BAD5E1;
+}
+
+div {
+    margin: 9vh 46vw 10vh 15vw;
+    padding: 0px 1.2vw;
+    box-shadow: 1px 1px 2px 0px,
+                1px 1px 2px 0px inset;
+    background-color: rgba(245, 245, 245, 0.748);
+    border: 10px solid #855027bf;
+    border-radius: 20px;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+}
+
+h1 {
+    margin-top: 18px;
+    font-size: 1.3em;
+    font-weight: bold;
+}
