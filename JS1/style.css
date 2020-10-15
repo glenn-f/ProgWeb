@@ -1,0 +1,9 @@
+body {
+    display: flex;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+}
+table {
+    text-align: center;
+    margin: 7px 3px;
+}
