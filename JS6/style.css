@@ -1,0 +1,16 @@
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-top: 10px;
+    flex-flow: wrap-reverse;
+}
+
+.barras {
+    margin: 1px;
+    background-color: red;
+}
+
+input[type=text] {
+    width: 50px;
+}
