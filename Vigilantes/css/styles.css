@@ -1,6 +1,11 @@
-span {
-  color: aqua;
-  display: inline-block;
+.texto.toggle>span {
+  color: blueviolet;
+}
+.texto.toggle {
+  color: maroon;
+}
+.texto>span {
+  color: greenyellow;
 }
 .texto {
   font-weight: bolder;
@@ -25,13 +30,14 @@ span {
   z-index: 5;
 }
 
-.reserva {
-  background-image: url('assets/reserva.png');
+.arvore {
+  background-image: url('assets/arvore.png');
   background-size: contain;
   background-repeat: no-repeat;
-  position: absolute;
-  left: 0px;
+  width: 100px;
+  height: 54px;
   top: 0px;
+  position: absolute;
   z-index: 1;
 }
 
@@ -45,18 +51,23 @@ span {
   z-index: 1;
 }
 
-.arvore {
-  background-image: url('assets/arvore.png');
+.reserva {
+  background-image: url('assets/reserva.png');
   background-size: contain;
   background-repeat: no-repeat;
+  width: 1243px;
+  height: 960px;
   position: absolute;
+  left: 0px;
   z-index: 1;
 }
 
-.foco-incendio {
+.fogo {
   background-image: url('assets/foco.gif');
   background-size: contain;
   background-repeat: no-repeat;
+  width: 100px;
+  height: 130px;
   position: absolute;
   z-index: 3;
 }
@@ -65,6 +76,8 @@ span {
   background-image: url('assets/caveira.gif');
   background-size: contain;
   background-repeat: no-repeat;
+  width: 120px;
+  height: 136px;
   position: absolute;
   z-index: 4;
 }

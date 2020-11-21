@@ -1,46 +1,56 @@
 (function () {
-
-  let FPS = 1; 
-  let arvoreDimensions = [100, 54];
-  let gameDimensions = [1243, 960];
-  let focoDimensions = [100, 130];
-  let focoAjustado = [90, 130];
-  let caveiraDimensions = [120, 136];
-  let lagoPos = [
-    [690,0,1062,186],
-    [60,566,211,776],
-  ];
+  // Configuração Inicial //
+  const initVidas = 5;
+  const initValorFPS = 1;
+  const initValorCrescFPS = 0.2;
+  const initTempoParaDevastar = 2000;
+  const initIntervCrescFPS = 60000;
+  // Constantes Globais //
+  const arvoreDimensions = [100, 54];
+  const reservaDimensions = [1243, 960];
+  const lagosArea = [ [690,0,1062,186],
+                    [60,566,211,776] ];
+  const dadosIncendio = {
+    fogo:    {     classe: "fogo", dimensaoX: 100, dimensaoY: 130, offsetX: -12, offsetY: 25,
+                tamanhoDevastacao: 130, arvores: 1, minSeg: 1,maxSeg: 4},
+    caveira: {  classe: "caveira", dimensaoX: 120, dimensaoY: 136, offsetX: -40, offsetY: -20,
+                tamanhoDevastacao: 200, arvores: 2, minSeg: 5, maxSeg: 20},
+  }
+  // Objetos Globais //
   let focos = [];
-  let caveiras = [];
   let arvores = [];
-  let caveiraLoopID;
-  let focoLoopID;
-  let vidas = 5;
   let placar;
   let screenMessage;
-  let paused;
-  let pauseTime;
-  let FPSLoopID;
-  let msgLoopID;
-  let msgBool = true;
-  let FPSTime;
-  let aumentoFPS = 0.2;
-  let FPSLoopInterval = 60000;
+  // Variáveis Globais //
+  let msgBool = true, paused = true;
+  let FPS, initFPS, vidas, aumentoFPS, FPSLoopInterval, tempoDevastar;
+  let caveiraLoopID, fogoLoopID, FPSLoopID, msgLoopID;
+  let pauseTime, FPSTime;
+
+  class Arvore {
+    constructor(pos) {
+      this.element = document.createElement("div");
+      this.element.className = "arvore";
+      this.element.style.left = `${pos * arvoreDimensions[0]}px`;
+      document.body.appendChild(this.element);
+    }
+  }
 
   class Placar {
-    constructor () {
+    constructor() {
       this.element = document.createElement("div");
       this.element.className = "placar";
       this.pontos = 0;
-      this.element.innerHTML = ("00000" + this.pontos).slice(-5);
+      this.element.innerHTML = "00000";
       document.body.appendChild(this.element);
     }
-    pontuar (qntd) {
+    pontuar(qntd) {
       this.pontos += qntd;
       this.element.innerHTML = ("00000" + this.pontos).slice(-5);
     }
     zerar () {
       this.pontos = 0;
+      this.element.innerHTML = "00000";
     }
   }
 
@@ -48,40 +58,47 @@
     constructor () {
       this.element = document.createElement("div");
       this.element.className = "reserva";
-      this.element.style.width = `${gameDimensions[0]}px`;
-      this.element.style.height = `${gameDimensions[1]}px`;
       this.element.style.top = `${arvoreDimensions[1]+3}px`;
       document.body.appendChild(this.element);
     }
   }
 
-  class Arvore {
-    constructor () {
+  class TextoNaTela {
+    constructor (text) {
       this.element = document.createElement("div");
-      this.element.className = "arvore";
-      this.element.style.width = `${arvoreDimensions[0]}px`;
-      this.element.style.height = `${arvoreDimensions[1]}px`;
-      this.element.style.left = `${arvores.length * arvoreDimensions[0]}px`;
-      this.element.style.top = "0px";
+      this.element.className = "texto";
+      if (text !== undefined) this.element.innerHTML = text;
       document.body.appendChild(this.element);
-      arvores.push(this.element);
+    }
+    looper (bool) {
+      return setInterval(() => {
+        if (bool) {
+          this.element.className = "texto";
+        } else {
+          this.element.className = "texto toggle";
+        }
+        bool = !bool;
+      }, 1000);
+    }
+    write (text) {
+      this.element.innerHTML = text;
     }
   }
 
-  class FocoIncendio {
-    constructor () {
+  class Incendio {
+    constructor (tipo) {
       this.element = document.createElement("div");
-      this.element.className = "foco-incendio";
-      this.element.style.width = `${focoDimensions[0]}px`;
-      this.element.style.height = `${focoDimensions[1]}px`;
+      this.tipo = tipo;
+      this.element.className = dadosIncendio[tipo].classe;
       do {
-        this.x = Math.floor((Math.random() * (gameDimensions[0]-focoAjustado[0])));
-        this.y = Math.floor((Math.random() * (gameDimensions[1]-focoAjustado[1])));
-      } while (estaNoLago(this.x, this.y, focoAjustado));
+        this.x = Math.floor((Math.random() * (reservaDimensions[0]-dadosIncendio[tipo].dimensaoX)));
+        this.y = Math.floor((Math.random() * (reservaDimensions[1]-dadosIncendio[tipo].dimensaoY)));
+      } while (estaNoLago(this.x, this.y, dadosIncendio[tipo].dimensaoX, dadosIncendio[tipo].dimensaoY));
       this.element.style.left = `${this.x}px`;
       this.element.style.top = `${this.y+arvoreDimensions[1]}px`;
+      this.arvores = dadosIncendio[tipo].arvores;
       this.arrayIndex = focos.length;
-      this.fps = 2000/FPS;
+      this.tempoDevastar = tempoDevastar/FPS;
       this.ms = (new Date).getTime();
       this.element.onclick = (() => {
         if (!paused) {
@@ -91,111 +108,26 @@
           delete focos[this.arrayIndex];
         }
       }).bind(this);
-      this.timeout = setTimeout(() => {
-        if (arvores.length > 1) {
-          document.body.removeChild(arvores.pop());
+      this.devastar = (() => {
+        if (!paused) {
           document.body.removeChild(this.element);
-          new Devastacao(this.x, this.y, 130, -12, 25);
+          new Devastacao(this.x, this.y, dadosIncendio[this.tipo].tamanhoDevastacao, dadosIncendio[this.tipo].offsetX, dadosIncendio[this.tipo].offsetY);
           delete focos[this.arrayIndex];
+        }
+        if (arvores.length > this.arvores) {
+          for (let i = 0; i < this.arvores; i++) document.body.removeChild(arvores.pop().element);
         } else {
-          if (arvores.length > 0) {
-            document.body.removeChild(arvores.pop());
-            document.body.removeChild(this.element);
-            new Devastacao(this.x, this.y, 130, -12, 25);
-            delete focos[this.arrayIndex];
-          }
+          while (arvores.length > 0) document.body.removeChild(arvores.pop().element);
           if (!paused) GameOver();
         }
-      }, this.fps);
+      }).bind(this);
+      this.timeout = setTimeout(this.devastar, this.tempoDevastar);
       focos.push(this);
       document.body.appendChild(this.element);
     }
     restartTimer () {
-      this.fps -= this.ms;
-      this.timeout = setTimeout(() => {
-        if (arvores.length > 1) {
-          document.body.removeChild(arvores.pop());
-          document.body.removeChild(this.element);
-          new Devastacao(this.x, this.y, 130, -12, 25);
-          delete focos[this.arrayIndex];
-        } else {
-          if (arvores.length > 0) {
-            document.body.removeChild(arvores.pop());
-            document.body.removeChild(this.element);
-            new Devastacao(this.x, this.y, 130, -12, 25);
-            delete focos[this.arrayIndex];
-          }
-          if (!paused) GameOver();
-        }
-      }, Math.max(this.fps, 2000/(4*FPS)));
-      this.ms = (new Date).getTime();
-    }
-  }
-
-  class Caveira {
-    constructor () {
-      this.element = document.createElement("div");
-      this.element.className = "caveira";
-      this.element.style.width = `${caveiraDimensions[0]}px`;
-      this.element.style.height = `${caveiraDimensions[1]}px`;
-      do {
-        this.x = Math.floor((Math.random() * (gameDimensions[0]-caveiraDimensions[0])));
-        this.y = Math.floor((Math.random() * (gameDimensions[1]-caveiraDimensions[1])));
-      } while (estaNoLago(this.x, this.y, caveiraDimensions));
-      this.element.style.left = `${this.x}px`;
-      this.element.style.top = `${this.y+arvoreDimensions[1]}px`;
-      this.arrayIndex = caveiras.length;
-      this.ms = (new Date).getTime();
-      this.fps = 2000/FPS;
-      this.timeout = setTimeout(() => {
-        if (arvores.length > 2) {
-          document.body.removeChild(arvores.pop());
-          document.body.removeChild(arvores.pop());
-          document.body.removeChild(this.element);
-          new Devastacao(this.x, this.y, 200, -40, -20);
-          delete caveiras[this.arrayIndex];
-        } else {
-          if (arvores.length > 0) {
-            document.body.removeChild(arvores.pop());
-            document.body.removeChild(this.element);
-            new Devastacao(this.x, this.y, 200, -40, -20);
-            delete caveiras[this.arrayIndex];
-          }
-          if (arvores.length > 0) document.body.removeChild(arvores.pop());
-          if (!paused) GameOver();
-        }
-      }, this.fps);
-      this.element.onclick = (() => {
-        if (!paused) {
-          placar.pontuar(20);
-          document.body.removeChild(this.element);
-          clearTimeout(this.timeout);
-          delete caveiras[this.arrayIndex];
-        }
-      }).bind(this);
-      caveiras.push(this);
-      document.body.appendChild(this.element);
-    }
-    restartTimer () {
-      this.fps -= this.ms;
-      this.timeout = setTimeout(() => {
-        if (arvores.length > 2) {
-          document.body.removeChild(arvores.pop());
-          document.body.removeChild(arvores.pop());
-          document.body.removeChild(this.element);
-          new Devastacao(this.x, this.y, 200, -40, -20);
-          delete caveiras[this.arrayIndex];
-        } else {
-          if (arvores.length > 0) {
-            document.body.removeChild(arvores.pop());
-            document.body.removeChild(this.element);
-            new Devastacao(this.x, this.y, 200, -40, -20);
-            delete caveiras[this.arrayIndex];
-          }
-          if (arvores.length > 0) document.body.removeChild(arvores.pop());
-          if (!paused) GameOver();
-        }
-      }, Math.max(this.fps, 2000/(4*FPS)));
+      this.tempoDevastar -= this.ms;
+      this.timeout = setTimeout(this.devastar, Math.max(this.tempoDevastar, tempoDevastar/(4*FPS)));
       this.ms = (new Date).getTime();
     }
   }
@@ -212,6 +144,16 @@
     }
   }
 
+  function estaNoLago(x, y, itemX, itemY) {
+    for (let i = 0; i < lagosArea.length; i++) {
+      const lago = lagosArea[i];
+      if (x >= lago[0]-itemX && x <= lago[2] && y >= lago[1]-itemY && y <= lago[3]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function startHandler(e) {
     if (e.key === 's' || e.key === 'S') {
       GameStart();
@@ -220,14 +162,8 @@
 
   function restartHandler(e) {
     if (e.key === 's' || e.key === 'S') {
-      FPS = 1;
-      focos.length = 0;
-      caveiras.length = 0;
-      document.body.innerHTML = "";
-      document.body.appendChild(screenMessage);
-      reserva = new Reserva();
-      placar = new Placar();
-      for (let index = 0; index < vidas; index++) new Arvore();
+      resetGlobals()
+      initConfig();
       GameStart();
     }
   }
@@ -243,140 +179,116 @@
     }
   }
 
-  function init() {
-    for (let index = 0; index < vidas; index++) new Arvore();
-    reserva = new Reserva();
-    placar = new Placar();
-    screenMessage = document.createElement("div");
-    screenMessage.className = "texto";
+  function initConfig() {
+    for (let i = 0; i < vidas; i++) arvores.push(new Arvore (i));
+    placar = new Placar;
+    reserva = new Reserva;
+    screenMessage = new TextoNaTela;
+  }
+
+  function resetGlobals() {
     msgBool = true;
-    screenMessage.innerHTML = "Pressione <span>S</span> para começar o jogo!!";
-    msgLoopID = setInterval(() => {
-      if (msgBool) {
-        screenMessage.innerHTML = "Pressione <span>S</span> para começar o jogo!!";
-      } else {
-        screenMessage.innerHTML = "";
-      }
-      msgBool = !msgBool;
-    }, 1000);
-    document.body.appendChild(screenMessage);
+    FPS = initFPS;
+    focos.length = 0;
+    arvores.length = 0;
+    document.body.innerHTML = "";
+  }
+
+  function init() {
+    vidas = initVidas;
+    tempoDevastar = initTempoParaDevastar;
+    FPS = initValorFPS;
+    initFPS = initValorFPS;
+    aumentoFPS = initValorCrescFPS;
+    FPSLoopInterval = initIntervCrescFPS;
+    initConfig();
     window.addEventListener("keydown", startHandler);
+    screenMessage.write("Pressione <span>S</span> para começar o jogo!!");
+    msgLoopID = screenMessage.looper(msgBool);
   }
 
   function GameStart() {
-    FPS = 1;
+    paused = false;
+    screenMessage.write("");
     clearInterval(msgLoopID);
-    screenMessage.innerHTML = "";
-    placar.zerar();
-    FocoLoop();
-    CaveiraLoop();
-    FPSLoop(false,0);
+    incendioLoop("caveira", updateCaveira);
+    incendioLoop("fogo", updateFogo);
+    FPSLoop(false, 0);
     window.removeEventListener("keydown", startHandler);
     window.removeEventListener("keydown", restartHandler);
     window.addEventListener("keydown", pauseHandler);
-    paused = false;
   }
 
   function GameOver() {
+    paused = true;
     clearTimeout(caveiraLoopID);
-    clearTimeout(focoLoopID);
+    clearTimeout(fogoLoopID);
     clearTimeout(FPSLoopID);
     window.addEventListener("keydown", restartHandler);
     window.removeEventListener("keydown", pauseHandler);
-    paused = true;
-    screenMessage.innerHTML = "Game Over! :(<br>Pressione <span>S</span> para recomeçar o jogo!";
-    msgLoopID = setInterval(() => {
-      if (msgBool) {
-        screenMessage.innerHTML = "Game Over! :(<br>Pressione <span>S</span> para recomeçar o jogo!";
-      } else {
-        screenMessage.innerHTML = "";
-      }
-      msgBool = !msgBool;
-    }, 1000);
+    screenMessage.write("Game Over! :(<br>Pressione <span>S</span> para recomeçar o jogo!");
+    msgLoopID = screenMessage.looper(msgBool);
   }
 
-  function PauseGame () {
+  function PauseGame() {
     pauseTime = (new Date).getTime();
     focos.forEach((e) => {
-        if (e != "undefined") {
-          e.ms = pauseTime - e.ms;
-          clearTimeout(e.timeout);
-        }
-      });
-    caveiras.forEach((e) => {
-        if (e != "undefined") {
+        if (e !== undefined) {
           e.ms = pauseTime - e.ms;
           clearTimeout(e.timeout);
         }
       });
     clearTimeout(caveiraLoopID);
-    clearTimeout(focoLoopID);
+    clearTimeout(fogoLoopID);
     clearTimeout(FPSLoopID);
     FPSTime = FPSLoopInterval - Math.max((pauseTime - FPSTime),0);
-    screenMessage.innerHTML = "Jogo Pausado!<br>Pressione <span>P</span> para despausar!";
-    msgLoopID = setInterval(() => {
-      if (msgBool) {
-        screenMessage.innerHTML = "Jogo Pausado!<br>Pressione <span>P</span> para despausar!";
-      } else {
-        screenMessage.innerHTML = "";
-      }
-      msgBool = !msgBool;
-    }, 1000);
+    screenMessage.write("Jogo Pausado!<br>Pressione <span>P</span> para despausar!");
+    msgLoopID = screenMessage.looper(msgBool);
   }
 
   function UnPauseGame() {
     clearInterval(msgLoopID);
-    screenMessage.innerHTML = "";
-    focos.forEach((f) => {
-      f.restartTimer();
+    screenMessage.write("");
+    focos.forEach((e) => {
+      if (e !== undefined) {
+        e.restartTimer();
+      }
     });
-    caveiras.forEach((e) => {
-      e.restartTimer();
-    });
-    FocoLoop();
-    CaveiraLoop();
+    incendioLoop("caveira", updateCaveira);
+    incendioLoop("fogo", updateFogo);
     FPSLoop(true, FPSTime);
   }
 
-  function FPSLoop(quebrado, valor) {
-    if (quebrado) {
-      FPSLoopID = setTimeout(() => {
-        FPS += aumentoFPS;
-        FPSLoop(false, 0);
-      }, valor);
-    } else {
-      FPSLoopID = setTimeout(() => {
-        FPS += aumentoFPS;
-        console.log(FPS);
-        FPSLoop(false, 0);
-      }, FPSLoopInterval);
+  function FPSLoop(boolPause, valor) {
+    if (!boolPause) {
+      valor = FPSLoopInterval;
     }
+    FPSLoopID = setTimeout(() => {
+      FPS += aumentoFPS;
+      FPSLoop(false, 0);
+    }, valor);
     FPSTime = (new Date).getTime();
   }
 
-  function FocoLoop() {
-    focoLoopID = setTimeout(() => {
-      new FocoIncendio;
-      FocoLoop();
-    }, Math.ceil(Math.random()*4)*1000/FPS);// de 1 a 4 segundos
+  function incendioLoop(tipo, update) {
+    let qntdValores = dadosIncendio[tipo].maxSeg - dadosIncendio[tipo].minSeg;
+    let valorMinimo = dadosIncendio[tipo].minSeg;
+    let tempoMS = (Math.floor(Math.random() * qntdValores) + valorMinimo) * 1000 / FPS;
+    let loopID = setTimeout(() => {
+      new Incendio(tipo);
+      incendioLoop(tipo, update);
+    }, tempoMS);
+    update(loopID);
   }
 
-  function CaveiraLoop() {
-    caveiraLoopID = setTimeout(() => {
-      new Caveira;
-      CaveiraLoop();
-    }, (Math.ceil(Math.random()*16)+4)*1000/FPS);// de 5 a 20 segundos
+  function updateFogo(loopID) {
+    fogoLoopID = loopID;
   }
 
-  function estaNoLago(x, y, item) {
-    for (let i = 0; i < lagoPos.length; i++) {
-      const lago = lagoPos[i];
-      if (x >= lago[0]-item[0] && x <= lago[2] && y >= lago[1]-item[1] && y <= lago[3]) {
-        return true;
-      }
-    }
-    return false;
+  function updateCaveira(loopID) {
+    caveiraLoopID = loopID;
   }
 
   init();
+
 })();
