@@ -1,6 +1,6 @@
 (function () {
 
-  const FPS = 1; 
+  let FPS = 1; 
   let arvoreDimensions = [100, 54];
   let gameDimensions = [1243, 960];
   let focoDimensions = [100, 130];
@@ -16,11 +16,16 @@
   let caveiraLoopID;
   let focoLoopID;
   let vidas = 5;
-  let reserva;
   let placar;
   let screenMessage;
   let paused;
   let pauseTime;
+  let FPSLoopID;
+  let msgLoopID;
+  let msgBool = true;
+  let FPSTime;
+  let aumentoFPS = 0.2;
+  let FPSLoopInterval = 60000;
 
   class Placar {
     constructor () {
@@ -99,7 +104,7 @@
             new Devastacao(this.x, this.y, 130, -12, 25);
             delete focos[this.arrayIndex];
           }
-          GameOver();
+          if (!paused) GameOver();
         }
       }, this.fps);
       focos.push(this);
@@ -120,7 +125,7 @@
             new Devastacao(this.x, this.y, 130, -12, 25);
             delete focos[this.arrayIndex];
           }
-          GameOver();
+          if (!paused) GameOver();
         }
       }, Math.max(this.fps, 2000/(4*FPS)));
       this.ms = (new Date).getTime();
@@ -157,7 +162,7 @@
             delete caveiras[this.arrayIndex];
           }
           if (arvores.length > 0) document.body.removeChild(arvores.pop());
-          GameOver();
+          if (!paused) GameOver();
         }
       }, this.fps);
       this.element.onclick = (() => {
@@ -172,7 +177,7 @@
       document.body.appendChild(this.element);
     }
     restartTimer () {
-      this.fps -= Number(this.element.getAttribute("name"));
+      this.fps -= this.ms;
       this.timeout = setTimeout(() => {
         if (arvores.length > 2) {
           document.body.removeChild(arvores.pop());
@@ -188,7 +193,7 @@
             delete caveiras[this.arrayIndex];
           }
           if (arvores.length > 0) document.body.removeChild(arvores.pop());
-          GameOver();
+          if (!paused) GameOver();
         }
       }, Math.max(this.fps, 2000/(4*FPS)));
       this.ms = (new Date).getTime();
@@ -215,6 +220,7 @@
 
   function restartHandler(e) {
     if (e.key === 's' || e.key === 'S') {
+      FPS = 1;
       focos.length = 0;
       caveiras.length = 0;
       document.body.innerHTML = "";
@@ -243,16 +249,28 @@
     placar = new Placar();
     screenMessage = document.createElement("div");
     screenMessage.className = "texto";
+    msgBool = true;
     screenMessage.innerHTML = "Pressione <span>S</span> para começar o jogo!!";
+    msgLoopID = setInterval(() => {
+      if (msgBool) {
+        screenMessage.innerHTML = "Pressione <span>S</span> para começar o jogo!!";
+      } else {
+        screenMessage.innerHTML = "";
+      }
+      msgBool = !msgBool;
+    }, 1000);
     document.body.appendChild(screenMessage);
     window.addEventListener("keydown", startHandler);
   }
 
   function GameStart() {
+    FPS = 1;
+    clearInterval(msgLoopID);
     screenMessage.innerHTML = "";
     placar.zerar();
     FocoLoop();
     CaveiraLoop();
+    FPSLoop(false,0);
     window.removeEventListener("keydown", startHandler);
     window.removeEventListener("keydown", restartHandler);
     window.addEventListener("keydown", pauseHandler);
@@ -262,10 +280,19 @@
   function GameOver() {
     clearTimeout(caveiraLoopID);
     clearTimeout(focoLoopID);
-    screenMessage.innerHTML = "Game Over! :(<br>Pressione <span>S</span> para recomeçar o jogo!";
+    clearTimeout(FPSLoopID);
     window.addEventListener("keydown", restartHandler);
     window.removeEventListener("keydown", pauseHandler);
     paused = true;
+    screenMessage.innerHTML = "Game Over! :(<br>Pressione <span>S</span> para recomeçar o jogo!";
+    msgLoopID = setInterval(() => {
+      if (msgBool) {
+        screenMessage.innerHTML = "Game Over! :(<br>Pressione <span>S</span> para recomeçar o jogo!";
+      } else {
+        screenMessage.innerHTML = "";
+      }
+      msgBool = !msgBool;
+    }, 1000);
   }
 
   function PauseGame () {
@@ -284,19 +311,47 @@
       });
     clearTimeout(caveiraLoopID);
     clearTimeout(focoLoopID);
+    clearTimeout(FPSLoopID);
+    FPSTime = FPSLoopInterval - Math.max((pauseTime - FPSTime),0);
     screenMessage.innerHTML = "Jogo Pausado!<br>Pressione <span>P</span> para despausar!";
+    msgLoopID = setInterval(() => {
+      if (msgBool) {
+        screenMessage.innerHTML = "Jogo Pausado!<br>Pressione <span>P</span> para despausar!";
+      } else {
+        screenMessage.innerHTML = "";
+      }
+      msgBool = !msgBool;
+    }, 1000);
   }
 
-  function UnPauseGame () {
+  function UnPauseGame() {
+    clearInterval(msgLoopID);
+    screenMessage.innerHTML = "";
     focos.forEach((f) => {
-        f.restartTimer();
-      });
+      f.restartTimer();
+    });
     caveiras.forEach((e) => {
-        e.restartTimer();
-      });
+      e.restartTimer();
+    });
     FocoLoop();
     CaveiraLoop();
-    screenMessage.innerHTML = "";
+    FPSLoop(true, FPSTime);
+  }
+
+  function FPSLoop(quebrado, valor) {
+    if (quebrado) {
+      FPSLoopID = setTimeout(() => {
+        FPS += aumentoFPS;
+        FPSLoop(false, 0);
+      }, valor);
+    } else {
+      FPSLoopID = setTimeout(() => {
+        FPS += aumentoFPS;
+        console.log(FPS);
+        FPSLoop(false, 0);
+      }, FPSLoopInterval);
+    }
+    FPSTime = (new Date).getTime();
   }
 
   function FocoLoop() {
