@@ -1,23 +1,13 @@
 // Módulo de rotas
 
 const express = require('express');
+const mainController = require("../app/controllers/main");
 const router = express.Router();
 
-/*router.get("/", function (req, res) {
-    res.render("index", {layout: false});
-})*/
+router.get("/", mainController.index);
 
-router.get("/sobre", function (req, res) {
-    res.render("sobre", {layout: false});
-})
+router.get("/sobre", mainController.sobre);
 
-router.use("/img", [
-    express.static(`${__dirname}/../public/img`)
-])
-
-router.use(function (req, res) {
-    res.statusCode = 404;
-    res.send("404!");
-})
+router.use(mainController.erro404);
 
 module.exports = router;
