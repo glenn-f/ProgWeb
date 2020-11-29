@@ -1,6 +1,7 @@
-@import "./fontawesome/fontawesome.scss";
-@import "./fontawesome/solid.scss";
-@import "./fontawesome/brands.scss";
-@import "../../node_modules/bootstrap/scss/bootstrap.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/fontawesome.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/brands.scss";
 @import "./variables.scss";
+@import "../../node_modules/bootstrap/scss/bootstrap.scss";
 @import "./styles.scss";
+@import "./bootswatch.scss";

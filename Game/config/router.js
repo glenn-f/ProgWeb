@@ -6,7 +6,11 @@ const router = express.Router();
 
 router.get("/", mainController.index);
 
+router.get("/game", mainController.game);
+
 router.get("/sobre", mainController.sobre);
+
+router.get("/ui", mainController.ui);
 
 router.use(mainController.erro404);
 
