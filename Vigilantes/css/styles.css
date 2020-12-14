@@ -29,7 +29,6 @@
   width: 1100px;
   z-index: 5;
 }
-
 .arvore {
   background-image: url('assets/arvore.png');
   background-size: contain;
@@ -40,7 +39,6 @@
   position: absolute;
   z-index: 1;
 }
-
 .placar {
   font-size: 40px;
   font-weight: bolder;
@@ -50,7 +48,6 @@
   left: 1100px;
   z-index: 1;
 }
-
 .reserva {
   background-image: url('assets/reserva.png');
   background-size: contain;
@@ -61,7 +58,6 @@
   left: 0px;
   z-index: 1;
 }
-
 .fogo {
   background-image: url('assets/foco.gif');
   background-size: contain;
@@ -71,7 +67,6 @@
   position: absolute;
   z-index: 3;
 }
-
 .caveira {
   background-image: url('assets/caveira.gif');
   background-size: contain;
@@ -81,7 +76,6 @@
   position: absolute;
   z-index: 4;
 }
-
 .devastacao {
   background-image: url('assets/devastacao.png');
   background-size: contain;

@@ -12,12 +12,12 @@
                     [60,566,211,776] ];
   const dadosIncendio = {
     fogo:    {     classe: "fogo", dimensaoX: 100, dimensaoY: 130, offsetX: -12, offsetY: 25,
-                tamanhoDevastacao: 130, arvores: 1, minSeg: 1,maxSeg: 4},
+                tamanhoDevastacao: 130, pontos: 10, arvores: 1, minSeg: 1,maxSeg: 4},
     caveira: {  classe: "caveira", dimensaoX: 120, dimensaoY: 136, offsetX: -40, offsetY: -20,
-                tamanhoDevastacao: 200, arvores: 2, minSeg: 5, maxSeg: 20},
+                tamanhoDevastacao: 200, pontos: 20, arvores: 2, minSeg: 5, maxSeg: 20},
   }
   // Objetos Globais //
-  let focos = [];
+  let incendios = [];
   let arvores = [];
   let placar;
   let screenMessage;
@@ -40,8 +40,8 @@
     constructor() {
       this.element = document.createElement("div");
       this.element.className = "placar";
-      this.pontos = 0;
       this.element.innerHTML = "00000";
+      this.pontos = 0;
       document.body.appendChild(this.element);
     }
     pontuar(qntd) {
@@ -86,49 +86,53 @@
   }
 
   class Incendio {
-    constructor (tipo) {
-      this.element = document.createElement("div");
-      this.tipo = tipo;
-      this.element.className = dadosIncendio[tipo].classe;
+    constructor(tipo) {
       do {
         this.x = Math.floor((Math.random() * (reservaDimensions[0]-dadosIncendio[tipo].dimensaoX)));
         this.y = Math.floor((Math.random() * (reservaDimensions[1]-dadosIncendio[tipo].dimensaoY)));
       } while (estaNoLago(this.x, this.y, dadosIncendio[tipo].dimensaoX, dadosIncendio[tipo].dimensaoY));
+      this.element = document.createElement("div");
+      this.element.className = dadosIncendio[tipo].classe;
       this.element.style.left = `${this.x}px`;
       this.element.style.top = `${this.y+arvoreDimensions[1]}px`;
-      this.arvores = dadosIncendio[tipo].arvores;
-      this.arrayIndex = focos.length;
-      this.tempoDevastar = tempoDevastar/FPS;
+      this.element.onclick = this.apagar.bind(this);
+      this.tipo = tipo;
       this.ms = (new Date).getTime();
-      this.element.onclick = (() => {
-        if (!paused) {
-          placar.pontuar(10);
-          document.body.removeChild(this.element);
-          clearTimeout(this.timeout);
-          delete focos[this.arrayIndex];
-        }
-      }).bind(this);
-      this.devastar = (() => {
-        if (!paused) {
-          document.body.removeChild(this.element);
-          new Devastacao(this.x, this.y, dadosIncendio[this.tipo].tamanhoDevastacao, dadosIncendio[this.tipo].offsetX, dadosIncendio[this.tipo].offsetY);
-          delete focos[this.arrayIndex];
-        }
-        if (arvores.length > this.arvores) {
-          for (let i = 0; i < this.arvores; i++) document.body.removeChild(arvores.pop().element);
-        } else {
-          while (arvores.length > 0) document.body.removeChild(arvores.pop().element);
-          if (!paused) GameOver();
-        }
-      }).bind(this);
-      this.timeout = setTimeout(this.devastar, this.tempoDevastar);
-      focos.push(this);
+      this.arvores = dadosIncendio[tipo].arvores;
+      this.tempoDevastar = tempoDevastar/FPS;
+      this.timeout = setTimeout(this.devastar.bind(this), this.tempoDevastar);
+      this.arrayIndex = incendios.length;
+      incendios.push(this);
       document.body.appendChild(this.element);
     }
-    restartTimer () {
-      this.tempoDevastar -= this.ms;
-      this.timeout = setTimeout(this.devastar, Math.max(this.tempoDevastar, tempoDevastar/(4*FPS)));
+    apagar() {
+      if (!paused) {
+        placar.pontuar(dadosIncendio[this.tipo].pontos);
+        document.body.removeChild(this.element);
+        clearTimeout(this.timeout);
+        delete incendios[this.arrayIndex];
+      }
+    }
+    devastar() {
+      if (!paused) {
+        document.body.removeChild(this.element);
+        new Devastacao(this.x, this.y, dadosIncendio[this.tipo].tamanhoDevastacao, dadosIncendio[this.tipo].offsetX, dadosIncendio[this.tipo].offsetY);
+        delete incendios[this.arrayIndex];
+      }
+      if (arvores.length > this.arvores) {
+        for (let i = 0; i < this.arvores; i++) document.body.removeChild(arvores.pop().element);
+      } else {
+        while (arvores.length > 0) document.body.removeChild(arvores.pop().element);
+        if (!paused) GameOver();
+      }
+    }
+    pauseTimer(pauseMS) {
+      this.tempoDevastar -= Math.max(pauseMS - this.ms, 0);
+      clearTimeout(this.timeout);
+    }
+    restartTimer() {
       this.ms = (new Date).getTime();
+      this.timeout = setTimeout(this.devastar.bind(this), this.tempoDevastar);
     }
   }
 
@@ -189,7 +193,7 @@
   function resetGlobals() {
     msgBool = true;
     FPS = initFPS;
-    focos.length = 0;
+    incendios.length = 0;
     arvores.length = 0;
     document.body.innerHTML = "";
   }
@@ -232,10 +236,9 @@
 
   function PauseGame() {
     pauseTime = (new Date).getTime();
-    focos.forEach((e) => {
+    incendios.forEach((e) => {
         if (e !== undefined) {
-          e.ms = pauseTime - e.ms;
-          clearTimeout(e.timeout);
+          e.pauseTimer(pauseTime);
         }
       });
     clearTimeout(caveiraLoopID);
@@ -249,7 +252,7 @@
   function UnPauseGame() {
     clearInterval(msgLoopID);
     screenMessage.write("");
-    focos.forEach((e) => {
+    incendios.forEach((e) => {
       if (e !== undefined) {
         e.restartTimer();
       }
