@@ -14,7 +14,7 @@ async function create(req, res) {
     } else {
         try {
             await Curso.create({
-                sigla: req.body.sigla,
+                sigla: req.body.sigla.toUpperCase(),
                 nome: req.body.nome,
                 descricao: req.body.descricao,
                 areaId: req.body.areaId
@@ -29,7 +29,7 @@ async function create(req, res) {
     }
 }
 async function read(req, res) {
-    const curso = await Curso.findOne({where: {id: req.params.id}});
+    const curso = await Curso.findOne({where: {id: req.params.id}, include: models.Area});
     res.render("curso/read", {
         curso: curso.toJSON()
     })
@@ -44,7 +44,7 @@ async function update(req, res) {
     } else {
         try {
             await Curso.update({
-                sigla: req.body.sigla,
+                sigla: req.body.sigla.toUpperCase(),
                 nome: req.body.nome,
                 descricao: req.body.descricao,
                 areaId: req.body.areaId
