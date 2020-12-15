@@ -10,3 +10,22 @@
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     text-align: justify;
 }
+
+form [type="submit"] {
+    margin-bottom: 20px;
+}
+
+.invalid-feedback {
+    display: block;
+}
+
+.butaofim {
+    margin-bottom: 20px;
+}
+
+.options {
+    text-align: right;
+}
+.options a {
+    padding-left: 6px;
+}

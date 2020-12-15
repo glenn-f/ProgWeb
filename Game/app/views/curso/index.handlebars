@@ -1,0 +1,24 @@
+<h1>Cursos <a href="/curso/create" class="fas fa-plus-square"></a></h1>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th scope="col">Sigla</th>
+            <th scope="col">Nome</th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each cursos}}
+        <tr class="table-active">
+            <td>{{sigla}}</td>
+            <td>{{nome}}</td>
+            <td class="options">
+                <a href="/curso/{{id}}"><i class="far fa-eye"></i></a>
+                <a href="/curso/update/{{id}}"><i class="far fa-edit"></i></a>
+                <a href="/curso/remove/{{id}}"><i class="far fa-trash-alt"></i></a>
+            </td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>

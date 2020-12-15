@@ -1,0 +1,38 @@
+<h1>Adicionar Curso <a href="./" class="fas fa-undo-alt"></a></h1>
+<form action="/curso/create" method="post">
+    <fieldset class="form-group">
+        <label for="sigla">Sigla do curso</label>
+        <input type="text" class="form-control" name="sigla" id="sigla" value="{{curso.sigla}}" placeholder="Informe a sigla do curso">
+        <small class="form-text text-muted">Em caso de dúvidas, consulte o site da UFAM.</small>
+        <div class="invalid-feedback">{{printError errors 'sigla'}}</div>
+    </fieldset>
+    <fieldset class="form-group">
+        <label for="nome">Nome do curso</label>
+        <input type="text" class="form-control" name="nome" id="nome" value="{{curso.nome}}" placeholder="Informe o nome do curso">
+        <div class="invalid-feedback">{{printError errors 'nome'}}</div>
+    </fieldset>
+    <fieldset class="form-group">
+        <label for="descricao">Descrição do curso</label>
+        <textarea class="form-control" name="descricao" id="descricao" rows="3">{{curso.descricao}}</textarea>
+    </fieldset>
+    <fieldset class="form-group">
+        <legend>Área de Conhecimento</legend>
+        <div class="form-check">
+            <label class="form-check-label">
+                <input type="radio" class="form-check-input" name="area" id="area" value="1" {{checked curso.areaId 1}}>
+                Ciências Exatas. Ex: Computação, Matemática, Estatística, etc.
+            </label>
+            <br>
+            <label class="form-check-label">
+                <input type="radio" class="form-check-input" name="area" id="area" value="2" {{checked curso.areaId 2}}>
+                Ciências Humanas. Ex: Letras, Psicologia, História etc.
+            </label>
+            <br>
+            <label class="form-check-label">
+                <input type="radio" class="form-check-input" name="area" id="area" value="3" {{checked curso.areaId 3}}>
+                Ciências Biológicas. Ex: Medicina, Odontologia, Agronomia, etc.
+            </label>
+        </div>
+    </fieldset>
+    <button type="submit" class="btn btn-primary">Adicionar</button>
+</form>

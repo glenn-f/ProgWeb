@@ -7,7 +7,9 @@ const { expr } = require("jquery");
 
 const app = express();
 
-app.engine("handlebars", handlebars());
+app.engine("handlebars", handlebars({
+    helpers: require(__dirname + '/app/views/helpers/helpers.js')
+}));
 app.set("view engine", "handlebars");
 app.set("views", `${__dirname}/app/views`);
 app.use(sass({
@@ -30,6 +32,7 @@ app.use('/js', [
 ]);
 app.use("/webfonts", express.static(`${__dirname}/node_modules/@fortawesome/fontawesome-free/webfonts`));
 app.use(logger('combined'));
+app.use(express.urlencoded({ extended: false}));
 app.use(router);
 
 app.listen(3000, function () {
